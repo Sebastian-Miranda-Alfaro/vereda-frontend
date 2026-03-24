@@ -23,6 +23,13 @@ function LecturaEnVivo() {
       const respuesta = await fetch('https://vereda-backend-6otc.onrender.com/api/lecturas/', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
+      // --- NUEVA VALIDACIÓN ---
+      if (respuesta.status === 401) {
+        localStorage.clear() 
+        window.location.reload() 
+        return
+      }
+      // ------------------------
       const datos = await respuesta.json()
       if (respuesta.ok) setLecturas(datos)
     } catch (error) {

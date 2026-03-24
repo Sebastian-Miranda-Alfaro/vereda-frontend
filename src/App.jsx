@@ -12,7 +12,11 @@ function App() {
 
   useEffect(() => {
     const tokenGuardado = localStorage.getItem('token_vereda')
-    if (tokenGuardado) setIsLoggedIn(true)
+    const usuarioGuardado = localStorage.getItem('usuario_vereda') // <--- NUEVO
+    if (tokenGuardado) {
+      setIsLoggedIn(true)
+      if (usuarioGuardado) setUsername(usuarioGuardado) // <--- NUEVO
+    }
   }, [])
 
   // --- FUNCIÓN DE LOGIN ---
@@ -27,6 +31,7 @@ function App() {
       const datos = await respuesta.json()
       if (respuesta.ok) {
         localStorage.setItem('token_vereda', datos.access)
+        localStorage.setItem('usuario_vereda', username)
         setIsLoggedIn(true)
       } else {
         alert("Usuario o contraseña incorrectos")
@@ -61,6 +66,7 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('token_vereda')
+    localStorage.removeItem('usuario_vereda')
     setIsLoggedIn(false)
     setUsername('')
     setPassword('')

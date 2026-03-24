@@ -16,6 +16,14 @@ function MuroOraciones() {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
       })
+      // --- NUEVA VALIDACIÓN ---
+      if (respuesta.status === 401) {
+        alert("Tu sesión ha expirado por seguridad. Por favor, vuelve a iniciar sesión.")
+        localStorage.clear() // Borramos datos viejos
+        window.location.reload() // Recargamos para enviarlo al login
+        return
+      }
+      // ------------------------
       const datos = await respuesta.json()
       if (respuesta.ok) setOraciones(datos)
     } catch (error) {
