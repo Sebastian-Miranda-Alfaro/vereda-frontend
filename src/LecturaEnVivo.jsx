@@ -7,7 +7,7 @@ function LecturaEnVivo() {
 
   useEffect(() => {
     obtenerLecturas()
-    const socket = new WebSocket('ws://127.0.0.1:8000/ws/lecturas/')
+    const socket = new WebSocket('wss://vereda-backend-6otc.onrender.com/ws/lecturas/')
 
     socket.onmessage = function(event) {
       console.log("🔥 ¡El servidor avisó de un cambio!", JSON.parse(event.data))
@@ -20,7 +20,7 @@ function LecturaEnVivo() {
   const obtenerLecturas = async () => {
     const token = localStorage.getItem('token_vereda')
     try {
-      const respuesta = await fetch('http://127.0.0.1:8000/api/lecturas/', {
+      const respuesta = await fetch('https://vereda-backend-6otc.onrender.com/api/lecturas/', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const datos = await respuesta.json()
@@ -34,7 +34,7 @@ function LecturaEnVivo() {
     e.preventDefault()
     const token = localStorage.getItem('token_vereda')
     try {
-      await fetch('http://127.0.0.1:8000/api/lecturas/', {
+      await fetch('https://vereda-backend-6otc.onrender.com/api/lecturas/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

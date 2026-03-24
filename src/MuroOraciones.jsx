@@ -12,7 +12,7 @@ function MuroOraciones() {
   const obtenerOraciones = async () => {
     const token = localStorage.getItem('token_vereda')
     try {
-      const respuesta = await fetch('http://127.0.0.1:8000/api/oraciones/', {
+      const respuesta = await fetch('https://vereda-backend-6otc.onrender.com/api/oraciones/', {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -27,7 +27,7 @@ function MuroOraciones() {
     e.preventDefault()
     const token = localStorage.getItem('token_vereda')
     try {
-      const respuesta = await fetch('http://127.0.0.1:8000/api/oraciones/', {
+      const respuesta = await fetch('https://vereda-backend-6otc.onrender.com/api/oraciones/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -48,7 +48,7 @@ function MuroOraciones() {
   const sumarOracion = async (id) => {
     const token = localStorage.getItem('token_vereda')
     try {
-      const respuesta = await fetch(`http://127.0.0.1:8000/api/oraciones/${id}/orar/`, {
+      const respuesta = await fetch(`https://vereda-backend-6otc.onrender.com/api/oraciones/${id}/orar/`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       })
