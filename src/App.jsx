@@ -1,23 +1,52 @@
 import { useState, useEffect } from 'react'
 import LecturaEnVivo from './LecturaEnVivo'
 import MuroOraciones from './MuroOraciones'
+import CuadroDevocional from './CuadroDevocional'
 
 function App() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  
-  // NUEVO: Estado para saber si estamos en modo "Registro" o "Login"
-  const [isRegistering, setIsRegistering] = useState(false)
+  const [isRegistering, setIsRegistering] = useState(false)  // Estado para saber si estamos en modo "Registro" o "Login"
+  const [datosDevocional, setDatosDevocional] = useState(null)
+  const [mostrarDevocional, setMostrarDevocional] = useState(false)
 
   useEffect(() => {
     const tokenGuardado = localStorage.getItem('token_vereda')
-    const usuarioGuardado = localStorage.getItem('usuario_vereda') // <--- NUEVO
+    const usuarioGuardado = localStorage.getItem('usuario_vereda')
+    
     if (tokenGuardado) {
       setIsLoggedIn(true)
-      if (usuarioGuardado) setUsername(usuarioGuardado) // <--- NUEVO
+      if (usuarioGuardado) setUsername(usuarioGuardado)
+      
+      // --- LÓGICA DE 24 HORAS ---
+      // Sacamos la fecha actual (ej. "24/3/2026")
+      const fechaDeHoy = new Date().toLocaleDateString()
+      const fechaUltimoDevocional = localStorage.getItem('vereda_fecha_devocional')
+      
+      // Si la fecha guardada no es la de hoy, cargamos el devocional
+      if (fechaUltimoDevocional !== fechaDeHoy) {
+        cargarDevocional(tokenGuardado)
+      }
     }
   }, [])
+
+  // --- FUNCIÓN PARA LLAMAR A CHATGPT ---
+  const cargarDevocional = async (token) => {
+    try {
+      const respuesta = await fetch('https://vereda-backend-6otc.onrender.com/api/devocional/', {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const datos = await respuesta.json()
+      if (respuesta.ok) {
+        setDatosDevocional(datos)
+        setMostrarDevocional(true) // Mostramos el cuadro
+      }
+    } catch (error) {
+      console.error("Error cargando devocional", error)
+    }
+  }
 
   // --- FUNCIÓN DE LOGIN ---
   const handleLogin = async (e) => {
@@ -32,6 +61,8 @@ function App() {
       if (respuesta.ok) {
         localStorage.setItem('token_vereda', datos.access)
         localStorage.setItem('usuario_vereda', username)
+        // --- Cargamos el devocional justo después del login con el nuevo token ---
+        cargarDevocional(datos.access)
         setIsLoggedIn(true)
       } else {
         alert("Usuario o contraseña incorrectos")
@@ -39,6 +70,15 @@ function App() {
     } catch (error) {
       alert("Error de conexión con el servidor.")
     }
+  }
+
+  // --- Función para cerrar el cuadro ---
+const cerrarDevocional = () => {
+    setMostrarDevocional(false)
+    
+    // Guardamos la fecha de hoy para que no vuelva a salir hasta mañana
+    const fechaDeHoy = new Date().toLocaleDateString()
+    localStorage.setItem('vereda_fecha_devocional', fechaDeHoy)
   }
 
   // --- NUEVA FUNCIÓN DE REGISTRO ---
@@ -75,7 +115,11 @@ function App() {
   // --- PANTALLA PRINCIPAL (Logueado) ---
   if (isLoggedIn) {
     return (
-      <div className="min-h-screen bg-[#F4F5F7] pb-10 font-sans">
+      <div className="min-h-screen bg-[#F4F5F7] pb-10 font-sans antialiased relative">
+        {/* --- NUEVO: Cuadro Devocional Condicional --- */}
+        {mostrarDevocional && datosDevocional && (
+          <CuadroDevocional datos={datosDevocional} alCerrar={cerrarDevocional} />
+        )}
         <nav className="bg-[#FFFFFF] p-4 shadow-sm flex justify-between items-center sticky top-0 z-10">
           <h1 className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#FF5359] to-[#FF3EF8]">
             VEREDA
@@ -91,7 +135,7 @@ function App() {
         <main className="max-w-md mx-auto p-4 mt-4 space-y-6">
           <div className="bg-[#FFFFFF] p-6 rounded-[2rem] shadow-sm relative overflow-hidden text-center">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#FF5359] to-[#FF3EF8]"></div>
-            <h2 className="text-2xl font-black text-[#212121] mt-2">¡Hola, {username || 'Vereda'}! ✌️</h2>
+            <h2 className="text-2xl font-black text-[#212121] mt-2">¡Hola, {username || 'Vereda'}! </h2>
             <p className="text-[#757C8A] font-medium mt-1">Conéctate con tu comunidad.</p>
           </div>
 
