@@ -59,10 +59,21 @@ function App() {
       })
       const datos = await respuesta.json()
       if (respuesta.ok) {
+        // 1. Guardamos los pases de acceso
         localStorage.setItem('token_vereda', datos.access)
         localStorage.setItem('usuario_vereda', username)
-        // --- Cargamos el devocional justo después del login con el nuevo token ---
-        cargarDevocional(datos.access)
+        
+        // --- 2. LÓGICA DE 24 HORAS EN EL LOGIN ---
+        const fechaDeHoy = new Date().toLocaleDateString()
+        const fechaUltimoDevocional = localStorage.getItem('vereda_fecha_devocional')
+        
+        // Solo llamamos a la IA si la fecha guardada no es la de hoy
+        if (fechaUltimoDevocional !== fechaDeHoy) {
+          cargarDevocional(datos.access)
+        }
+        // ----------------------------------------
+        
+        // 3. Lo dejamos entrar a la app
         setIsLoggedIn(true)
       } else {
         alert("Usuario o contraseña incorrectos")
