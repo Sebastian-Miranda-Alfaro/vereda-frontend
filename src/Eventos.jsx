@@ -6,21 +6,20 @@ function Eventos() {
   // 1. Buscamos los eventos en Django
 useEffect(() => {
     const obtenerEventos = async () => {
-      // 1. Intentamos obtener el token (Asegúrate de que este nombre sea el mismo que en el Login)
       const miToken = localStorage.getItem('token_vereda'); 
-      
-      console.log("DEBUG - Token enviado:", miToken); // Esto nos dirá si el token existe o es null
 
       try {
         const respuesta = await fetch('https://vereda-backend-6otc.onrender.com/api/eventos/', {
           method: 'GET',
           headers: { 
-            'Authorization': `Bearer ${miToken}` // <-- Verificamos espacio y nombre
+            'Authorization': `Bearer ${miToken}`
           }
         });
 
         if (respuesta.status === 401) {
-            console.error("¡ERROR 401! Django rechazó el token.");
+            console.error("El token expiró o es inválido.");
+            // Tip de Senior: En el futuro, aquí podrías agregar una línea 
+            // para que la app cierre sesión automáticamente si el token caduca.
         }
 
         const datos = await respuesta.json();
@@ -28,9 +27,10 @@ useEffect(() => {
           setEventos(datos);
         }
       } catch (error) {
-        console.error("Error al obtener eventos:", error);
+        console.error("Error al conectarse con el servidor:", error);
       }
     };
+    
     obtenerEventos();
   }, []);
 
