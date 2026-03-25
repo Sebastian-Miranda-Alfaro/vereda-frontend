@@ -216,7 +216,7 @@ function App() {
                   <img
                     src={fotoLugar}
                     alt="Nuestra Comunidad Vereda"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-top"
                   />
                 </div>
                 {/* --- EVENTOS --- */}
