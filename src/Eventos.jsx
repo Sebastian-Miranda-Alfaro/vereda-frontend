@@ -89,7 +89,7 @@ function Eventos() {
           {/* Mostramos la imagen solo si pusiste un link en el panel de admin */}
           {evento.imagen_url && (
             <div className="w-full h-40 bg-gray-200 rounded-2xl mb-5 overflow-hidden shadow-inner">
-              <img src={evento.imagen_url} alt={evento.titulo} className="w-full h-full object-cover object-[50%_50%]" />
+              <img src={evento.imagen_url} alt={evento.titulo} className="w-full h-full object-cover object-[50%_35%]" />
             </div>
           )}
           
