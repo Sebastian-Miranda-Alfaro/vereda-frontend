@@ -3,6 +3,7 @@ import LecturaEnVivo from './LecturaEnVivo'
 import MuroOraciones from './MuroOraciones'
 import CuadroDevocional from './CuadroDevocional'
 import fotoLugar from './assets/foto-comunidad.jpg'
+import Eventos from './Eventos'
 
 function App() {
   const [username, setUsername] = useState('')
@@ -218,7 +219,10 @@ function App() {
                     className="w-full h-full object-cover"
                   />
                 </div>
+                {/* --- EVENTOS --- */}
+                <Eventos />
 
+                {/* --- TEXTO --- */}
                 <div className="space-y-4 text-[#4A5568] font-medium leading-relaxed">
                   <p>
                     Somos una comunidad de jóvenes buscando crecer en fe, amistad y propósito. Creemos que nadie debe caminar solo.
