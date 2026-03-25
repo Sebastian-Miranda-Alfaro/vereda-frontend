@@ -4,24 +4,35 @@ function Eventos() {
   const [eventos, setEventos] = useState([])
 
   // 1. Buscamos los eventos en Django
-  useEffect(() => {
+useEffect(() => {
     const obtenerEventos = async () => {
-      const token = localStorage.getItem('token_vereda')
+      // 1. Intentamos obtener el token (Asegúrate de que este nombre sea el mismo que en el Login)
+      const miToken = localStorage.getItem('token_vereda'); 
+      
+      console.log("DEBUG - Token enviado:", miToken); // Esto nos dirá si el token existe o es null
+
       try {
         const respuesta = await fetch('https://vereda-backend-6otc.onrender.com/api/eventos/', {
           method: 'GET',
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        const datos = await respuesta.json()
+          headers: { 
+            'Authorization': `Bearer ${miToken}` // <-- Verificamos espacio y nombre
+          }
+        });
+
+        if (respuesta.status === 401) {
+            console.error("¡ERROR 401! Django rechazó el token.");
+        }
+
+        const datos = await respuesta.json();
         if (respuesta.ok) {
-          setEventos(datos)
+          setEventos(datos);
         }
       } catch (error) {
-        console.error("Error al obtener eventos:", error)
+        console.error("Error al obtener eventos:", error);
       }
-    }
-    obtenerEventos()
-  }, [])
+    };
+    obtenerEventos();
+  }, []);
 
   // --- SUBCOMPONENTE: El Reloj de Cuenta Regresiva ---
   const Reloj = ({ fechaDestino }) => {
