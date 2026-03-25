@@ -86,23 +86,33 @@ export default function LecturaEnVivo() {
   // 1. OBTENER EL TEXTO BÍBLICO Y AVISAR AL SERVIDOR AUTOMÁTICAMENTE
   useEffect(() => {
     // A. Traer texto de la Biblia
+    // A. Traer texto de la Biblia (Reina Valera 1960)
     const obtenerTextoBiblico = async () => {
       setCargando(true);
       setError(null);
-      const url = `https://bible-api.com/${libroSeleccionado.valor}+${capituloSeleccionado}?translation=rvr`;
+      // Nueva URL hacia la API en español
+      const url = `https://bible-api.deno.dev/api/read/rv1960/${libroSeleccionado.valor}/${capituloSeleccionado}`;
+      
       try {
         const respuesta = await fetch(url);
         if (!respuesta.ok) throw new Error('No se pudo obtener el texto bíblico.');
+        
         const datos = await respuesta.json();
-        setVersiculos(datos.verses);
+        
+        // Formateamos los datos para que React los entienda
+        const versiculosFormateados = datos.vers.map(v => ({
+          verse: v.number,
+          text: v.verse
+        }));
+        
+        setVersiculos(versiculosFormateados);
       } catch (err) {
         console.error(err);
-        setError("Error al cargar la Biblia.");
+        setError("Error al cargar la Biblia. Revisa tu conexión.");
       } finally {
         setCargando(false);
       }
     };
-
     // B. Avisar a tu servidor Django en automático (¡Adiós botón "Avisar"!)
     const actualizarMiLecturaAutomatica = async () => {
       const token = localStorage.getItem('token_vereda');
