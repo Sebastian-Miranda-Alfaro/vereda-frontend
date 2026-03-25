@@ -8,7 +8,7 @@ function Eventos() {
     const obtenerEventos = async () => {
       const token = localStorage.getItem('token_vereda')
       try {
-        const respuesta = await fetch('https://https://vereda-backend-6otc.onrender.com/api/eventos/', {
+        const respuesta = await fetch('https://vereda-backend-6otc.onrender.com/api/eventos/', {
           method: 'GET',
           headers: { 'Authorization': `Bearer ${token}` }
         })
