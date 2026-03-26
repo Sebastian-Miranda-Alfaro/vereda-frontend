@@ -12,8 +12,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate', // Se actualiza sola cuando haces cambios
       manifest: {
-        name: 'Comunidad Vereda',
-        short_name: 'Vereda',
+        name: 'Faithful Circle',
+        short_name: 'Faithful Circle',
         description: 'Tu espacio, tu comunidad.',
         theme_color: '#FF5359', // Tu color primario (Rojo coral)
         background_color: '#F4F5F7', // Tu color de fondo claro
