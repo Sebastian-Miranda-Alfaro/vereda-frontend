@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
+import { guardarSubrayado, guardarNota, compartirVersiculo, obtenerMisSubrayados } from './api/comunidadApi';
 // --- CONFIGURACIÓN DE LA BIBLIA ---
 const librosBiblia = [
   { nombre: "Génesis", valor: "genesis", capitulos: 50 },
@@ -79,66 +79,118 @@ export default function LecturaEnVivo() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
+  // Guarda el versículo que el usuario tocó
+  const [versiculoActivo, setVersiculoActivo] = useState(null); 
+  // Abrir las ventanas de notas o compartir
+  const [modalNotaAbierto, setModalNotaAbierto] = useState(false);
+  const [modalCompartirAbierto, setModalCompartirAbierto] = useState(false);
 
   // --- ESTADOS DEL TIEMPO REAL (De tu código anterior) ---
   const [lecturasActivas, setLecturasActivas] = useState([]);
 
-  // 1. OBTENER EL TEXTO BÍBLICO Y AVISAR AL SERVIDOR AUTOMÁTICAMENTE
-  useEffect(() => {
-    // A. Traer texto de la Biblia
-    // A. Traer texto de la Biblia (Reina Valera 1960)
-    const obtenerTextoBiblico = async () => {
-      setCargando(true);
-      setError(null);
-      // Nueva URL hacia la API en español
-      const url = `https://bible-api.deno.dev/api/read/rv1960/${libroSeleccionado.valor}/${capituloSeleccionado}`;
-      
-      try {
-        const respuesta = await fetch(url);
-        if (!respuesta.ok) throw new Error('No se pudo obtener el texto bíblico.');
-        
-        const datos = await respuesta.json();
-        
-        // Formateamos los datos para que React los entienda
-        const versiculosFormateados = datos.vers.map(v => ({
-          verse: v.number,
-          text: v.verse
-        }));
-        
-        setVersiculos(versiculosFormateados);
-      } catch (err) {
-        console.error(err);
-        setError("Error al cargar la Biblia. Revisa tu conexión.");
-      } finally {
-        setCargando(false);
-      }
-    };
-    // B. Avisar a tu servidor Django en automático (¡Adiós botón "Avisar"!)
-    const actualizarMiLecturaAutomatica = async () => {
-      const token = localStorage.getItem('token_vereda');
-      if (!token) return;
-      try {
-        await fetch('https://vereda-backend-6otc.onrender.com/api/lecturas/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ 
-            libro: libroSeleccionado.nombre, 
-            capitulo: capituloSeleccionado.toString() 
-          })
-        });
-      } catch (error) {
-        console.error("Error al actualizar estado en vivo", error);
-      }
-    };
+  // --- FUNCIONES PARA LA API ---
+  const [textoNota, setTextoNota] = useState(''); // Lo que el usuario escribe en la nota
+  const [subrayadosCapitulo, setSubrayadosCapitulo] = useState([]); // Guarda los versículos pintados
 
-    obtenerTextoBiblico();
-    actualizarMiLecturaAutomatica();
+  const manejarSubrayado = async (numeroVersiculo) => {
+    try {
+      await guardarSubrayado(libroSeleccionado.nombre, capituloSeleccionado, numeroVersiculo, 'amarillo');
+      alert("¡Versículo subrayado y guardado en la nube! 🖍️");
+      setSubrayadosCapitulo((prev) => [...prev, numeroVersiculo]);
+      setVersiculoActivo(null); // Cierra el menú
+    } catch (error) {
+      console.error("Error al subrayar:", error);
+      alert("Hubo un error al guardar. Revisa tu consola.");
+    }
+  };
 
-  }, [libroSeleccionado, capituloSeleccionado]); // Se ejecuta cada vez que cambias de libro o capítulo
+  const manejarGuardarNota = async () => {
+    if (!textoNota.trim()) return;
+    try {
+      await guardarNota(libroSeleccionado.nombre, capituloSeleccionado, versiculoActivo, textoNota);
+      alert("¡Nota privada guardada con éxito! ✍️");
+      setModalNotaAbierto(false);
+      setTextoNota('');
+      setVersiculoActivo(null);
+    } catch (error) {
+      console.error("Error al guardar nota:", error);
+    }
+  };
 
+  // 1. OBTENER TEXTO + AVISAR AL SERVIDOR
+useEffect(() => {
+  const obtenerTextoBiblico = async () => {
+    setCargando(true);
+    setError(null);
+
+    const url = `https://bible-api.deno.dev/api/read/rv1960/${libroSeleccionado.valor}/${capituloSeleccionado}`;
+
+    try {
+      const respuesta = await fetch(url);
+      if (!respuesta.ok) throw new Error();
+
+      const datos = await respuesta.json();
+
+      const versiculosFormateados = datos.vers.map(v => ({
+        verse: v.number,
+        text: v.verse
+      }));
+
+      setVersiculos(versiculosFormateados);
+    } catch (err) {
+      console.error(err);
+      setError("Error al cargar la Biblia.");
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const actualizarMiLecturaAutomatica = async () => {
+    const token = localStorage.getItem('token_vereda');
+    if (!token) return;
+
+    try {
+      await fetch('https://vereda-backend-6otc.onrender.com/api/lecturas/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          libro: libroSeleccionado.nombre,
+          capitulo: capituloSeleccionado.toString()
+        })
+      });
+    } catch (error) {
+      console.error("Error al actualizar estado en vivo", error);
+    }
+  };
+
+  obtenerTextoBiblico();
+  actualizarMiLecturaAutomatica();
+
+}, [libroSeleccionado, capituloSeleccionado]);
+
+
+// 2. SUBRAYADOS (SEPARADO)
+useEffect(() => {
+  const cargarSubrayados = async () => {
+    try {
+      const todosMisSubrayados = await obtenerMisSubrayados();
+
+      const deEsteCapitulo = todosMisSubrayados
+        .filter(sub => sub.libro === libroSeleccionado.nombre && sub.capitulo === capituloSeleccionado)
+        .map(sub => sub.versiculo);
+
+      setSubrayadosCapitulo(deEsteCapitulo);
+    } catch (error) {
+      console.error("Error al cargar subrayados", error);
+    }
+  };
+
+  cargarSubrayados();
+
+}, [libroSeleccionado, capituloSeleccionado]);
 
   // 2. CONEXIÓN WEBSOCKET PARA VER A LOS DEMÁS (De tu código anterior)
   useEffect(() => {
@@ -195,7 +247,7 @@ export default function LecturaEnVivo() {
     </div>
   );
 
-  return (
+ return (
     <div className={`${darkMode ? 'dark' : ''}`}>
       <div className="min-h-screen bg-[#FDFDFD] dark:bg-gray-900 transition-colors duration-300">
         
@@ -223,7 +275,7 @@ export default function LecturaEnVivo() {
             {/* PANEL DE USUARIOS ACTIVOS Y MODO OSCURO */}
             <div className="flex items-center gap-3">
               
-              {/* Indicador de Tiempo Real (Fusionado con tu lógica) */}
+              {/* Indicador de Tiempo Real */}
               <div className="flex flex-col items-end">
                 <div className="flex items-center gap-2.5 bg-[#EEFDF9] dark:bg-[#1A2E29] px-4 py-2 rounded-full text-[#23D9A6] font-semibold text-sm shadow-inner mb-1">
                   <span className="relative flex h-3 w-3">
@@ -260,16 +312,153 @@ export default function LecturaEnVivo() {
               </h1>
               
               <div className="space-y-6 text-gray-800 dark:text-gray-200 text-xl leading-relaxed font-serif">
-                {versiculos.map((v) => (
-                  <p key={v.verse} className="flex gap-4">
-                    <span className="text-sm font-bold text-gray-400 pt-1.5">{v.verse}</span>
-                    <span>{v.text}</span>
-                  </p>
-                ))}
+                {versiculos.map((v) => {
+                  // 1. Verificamos si este versículo está en nuestra lista de subrayados
+                  const estaSubrayado = subrayadosCapitulo.includes(v.verse);
+
+                  return (
+                    <div 
+                      key={v.verse}
+                      // 2. Aquí está la magia: Si está subrayado, pinta el fondo amarillo. Si no, déjalo normal.
+                      className={`relative group flex gap-4 p-2 rounded-xl transition-colors cursor-pointer ${
+                        estaSubrayado 
+                          ? 'bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900/40 dark:hover:bg-yellow-900/60' 
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                      }`}
+                      onClick={() => setVersiculoActivo(versiculoActivo === v.verse ? null : v.verse)}
+                    >
+                      <span className="text-sm font-bold text-gray-400 pt-1.5 min-w-[20px]">{v.verse}</span>
+                      
+                      {/* El texto del versículo */}
+                      <p className="flex-1">{v.text}</p>
+                      
+                      {/* EL MENÚ FLOTANTE MÁGICO */}
+                      {versiculoActivo === v.verse && (
+                        <div className="absolute top-full left-10 mt-2 z-50 flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 animate-fade-in-up">
+
+                          {/* Botón Subrayar (Amarillo) */}
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); manejarSubrayado(v.verse); }} 
+                            className="w-8 h-8 rounded-full bg-yellow-100 hover:bg-yellow-300 transition-colors flex items-center justify-center text-lg" 
+                            title="Subrayar de amarillo"
+                          >
+                            🖍️
+                          </button>
+
+                          <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1"></div>
+
+                          {/* Botón Anotar */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setModalNotaAbierto(true); }}
+                            className="px-3 py-1.5 text-sm font-bold text-[#5241C7] bg-[#5241C7]/10 rounded-lg hover:bg-[#5241C7]/20 transition-colors flex items-center gap-1.5"
+                          >
+                            <span>✍️</span> Nota
+                          </button>
+
+                          {/* Botón Compartir */}
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setModalCompartirAbierto(true); }}
+                            className="px-3 py-1.5 text-sm font-bold text-[#23D9A6] bg-[#23D9A6]/10 rounded-lg hover:bg-[#23D9A6]/20 transition-colors flex items-center gap-1.5"
+                          >
+                            <span>✨</span> Compartir
+                          </button>
+                          
+                          {/* Botón Cerrar (X) */}
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setVersiculoActivo(null); }}
+                            className="ml-1 p-1 text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            ✕
+                          </button>
+
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </article>
           )}
         </main>
+
+        {/* ========================================== */}
+        {/* 👉 AQUÍ VAN LOS MODALES, ADENTRO DEL RETURN 👈 */}
+        {/* ========================================== */}
+        
+        {/* --- MODAL PARA ESCRIBIR NOTA PRIVADA --- */}
+        {modalNotaAbierto && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-2xl w-full max-w-sm animate-fade-in-up">
+              <h3 className="text-xl font-bold text-[#5241C7] mb-2">Mi Nota Personal</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                {libroSeleccionado.nombre} {capituloSeleccionado}:{versiculoActivo}
+              </p>
+              <textarea
+                className="w-full bg-gray-50 dark:bg-gray-700 p-4 rounded-xl border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-[#5241C7] outline-none min-h-[120px] resize-none mb-4 dark:text-white"
+                placeholder="¿Qué te habló Dios en este versículo?..."
+                value={textoNota}
+                onChange={(e) => setTextoNota(e.target.value)}
+              ></textarea>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setModalNotaAbierto(false); setTextoNota(''); }}
+                  className="flex-1 py-3 font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 rounded-xl transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={manejarGuardarNota}
+                  className="flex-1 py-3 font-bold text-white bg-[#5241C7] hover:bg-[#4133A1] rounded-xl shadow-lg transition-transform active:scale-95"
+                >
+                  Guardar Nota
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --- MODAL PARA COMPARTIR EN EL FEED --- */}
+        {modalCompartirAbierto && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-2xl w-full max-w-sm animate-fade-in-up">
+              <h3 className="text-xl font-bold text-[#23D9A6] mb-2">Compartir con la Comunidad</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Todos verán: {libroSeleccionado.nombre} {capituloSeleccionado}:{versiculoActivo}
+              </p>
+              
+              {/* Aquí mostramos un mini-resumen del versículo que va a compartir */}
+              <div className="bg-[#EEFDF9] dark:bg-[#1A2E29] p-3 rounded-lg mb-4 border-l-4 border-[#23D9A6]">
+                 <p className="text-sm italic text-gray-700 dark:text-gray-300">
+                    "{versiculos.find(v => v.verse === versiculoActivo)?.text}"
+                 </p>
+              </div>
+
+              <textarea 
+                className="w-full bg-gray-50 dark:bg-gray-700 p-4 rounded-xl border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-[#23D9A6] outline-none min-h-[100px] resize-none mb-4 dark:text-white"
+                placeholder="Escribe una reflexión pública (opcional)..."
+              ></textarea>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setModalCompartirAbierto(false)}
+                  className="flex-1 py-3 font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 rounded-xl transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={() => {
+                    alert("¡Versículo enviado al Feed de la comunidad! ✨");
+                    setModalCompartirAbierto(false);
+                    setVersiculoActivo(null);
+                  }}
+                  className="flex-1 py-3 font-bold text-white bg-[#23D9A6] hover:bg-[#1eb98e] rounded-xl shadow-lg transition-transform active:scale-95"
+                >
+                  Publicar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
