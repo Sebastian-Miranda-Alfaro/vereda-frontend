@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { guardarSubrayado, guardarNota, compartirVersiculo, obtenerMisSubrayados } from './api/comunidadApi';
+import { guardarSubrayado, guardarNota,obtenerMisNotas, compartirVersiculo, obtenerMisSubrayados } from './api/comunidadApi';
 // --- CONFIGURACIÓN DE LA BIBLIA ---
 const librosBiblia = [
   { nombre: "Génesis", valor: "genesis", capitulos: 50 },
@@ -93,6 +93,8 @@ export default function LecturaEnVivo() {
   const [subrayadosCapitulo, setSubrayadosCapitulo] = useState([]); // Guarda los versículos pintados
   // versiculo compartido
   const [textoReflexion, setTextoReflexion] = useState('');
+  const [notasGuardadas, setNotasGuardadas] = useState({});
+  const [notaParaLeer, setNotaParaLeer] = useState(null);
 
   const manejarSubrayado = async (numeroVersiculo) => {
     try {
@@ -110,6 +112,7 @@ export default function LecturaEnVivo() {
     if (!textoNota.trim()) return;
     try {
       await guardarNota(libroSeleccionado.nombre, capituloSeleccionado, versiculoActivo, textoNota);
+      setNotasGuardadas((prev) => ({ ...prev, [versiculoActivo]: textoNota }));
       alert("¡Nota privada guardada con éxito! ✍️");
       setModalNotaAbierto(false);
       setTextoNota('');
@@ -118,6 +121,30 @@ export default function LecturaEnVivo() {
       console.error("Error al guardar nota:", error);
     }
   };
+  // --- CARGAR INDICADORES DE NOTAS ---
+  useEffect(() => {
+    const cargarIndicadores = async () => {
+      try {
+        const todasMisNotas = await obtenerMisNotas();
+        
+        // Creamos diccionario
+        const diccionarioNotas = {};
+        todasMisNotas.forEach(nota => {
+          if (nota.libro === libroSeleccionado.nombre && parseInt(nota.capitulo) === capituloSeleccionado) {
+            diccionarioNotas[parseInt(nota.versiculo)] = nota.texto; // Aseguramos guardar el texto
+          }
+        });
+          
+        setNotasGuardadas(diccionarioNotas);
+      } catch (error) {
+        console.error("Error al cargar los indicadores de notas:", error);
+      }
+    };
+
+    if (libroSeleccionado && capituloSeleccionado) {
+      cargarIndicadores();
+    }
+  }, [libroSeleccionado, capituloSeleccionado]); // Se vuelve a ejecutar si cambias de página
 
   // 1. OBTENER TEXTO + AVISAR AL SERVIDOR
 useEffect(() => {
@@ -351,14 +378,30 @@ useEffect(() => {
                       }`}
                       onClick={() => setVersiculoActivo(versiculoActivo === v.verse ? null : v.verse)}
                     >
-                      <span className="text-sm font-bold text-gray-400 pt-1.5 min-w-[20px]">{v.verse}</span>
+                      {/* 👇 AQUÍ ESTÁ EL CAMBIO: El contenedor para el número y el iconito de nota 👇 */}
+                      <div className="flex flex-col items-center pt-1.5 min-w-[24px]">
+                        <span className="text-sm font-bold text-gray-400">{v.verse}</span>
+                        {/* Si el versículo actual está en nuestra lista de notas, pintamos el ícono */}
+                        {notasGuardadas[v.verse] && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); // 🛑 Importante: Evita que se abra el menú de abajo al darle clic al icono
+                              setNotaParaLeer({ versiculo: v.verse, texto: notasGuardadas[v.verse] }); // Abrimos la nota
+                            }}
+                            className="text-[12px] mt-0.5 animate-fade-in-up hover:scale-125 transition-transform cursor-pointer" 
+                            title="Ver mi nota"
+                          >
+                            📝
+                          </button>
+                        )}
+                      </div>
                       
                       {/* El texto del versículo */}
                       <p className="flex-1">{v.text}</p>
                       
                       {/* EL MENÚ FLOTANTE MÁGICO */}
                       {versiculoActivo === v.verse && (
-                        <div className="absolute top-full left-10 mt-2 z-50 flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 animate-fade-in-up">
+                        <div className="absolute top-full left-10 mt-2 z-20 flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 animate-fade-in-up">
 
                           {/* Botón Subrayar (Amarillo) */}
                           <button 
@@ -482,6 +525,35 @@ useEffect(() => {
             </div>
           </div>
         )}
+        {/* --- MODAL PARA LEER LA NOTA --- */}
+      {notaParaLeer && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setNotaParaLeer(null)}>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-2xl w-full max-w-sm animate-fade-in-up" onClick={e => e.stopPropagation()}>
+            
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-[#212121] dark:text-white">
+                Mi Nota Privada
+              </h3>
+              <span className="bg-[#5241C7]/10 text-[#5241C7] text-xs font-bold px-3 py-1 rounded-full">
+                {libroSeleccionado?.nombre} {capituloSeleccionado}:{notaParaLeer.versiculo}
+              </span>
+            </div>
+
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl border border-yellow-100 dark:border-yellow-700/50 mb-6">
+              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                {notaParaLeer.texto}
+              </p>
+            </div>
+            
+            <button 
+              onClick={() => setNotaParaLeer(null)}
+              className="w-full py-3 font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 rounded-xl transition-colors"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
 
       </div>
     </div>
