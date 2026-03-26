@@ -4,6 +4,7 @@ import MuroOraciones from './MuroOraciones'
 import CuadroDevocional from './CuadroDevocional'
 import fotoLugar from './assets/foto-comunidad.jpg'
 import Eventos from './Eventos'
+import FeedComunidad from './FeedComunidad';
 
 function App() {
   const [username, setUsername] = useState('')
@@ -228,7 +229,7 @@ function App() {
                     Somos una comunidad de jóvenes buscando crecer en fe, amistad y propósito. Creemos que nadie debe caminar solo.
                   </p>
                   <p>
-                    En esta app podrás compartir tus necesidades de oración para que todos te apoyemos, y seguir las lecturas de la semana junto a tus amigos en tiempo real.
+                    En esta app podrás compartir tus necesidades de oración para que todos te apoyemos, y seguir las lecturas de la semana junto a tus amigos, compañeros líderes.
                   </p>
                   <div className="p-4 bg-[#00F3FF]/10 rounded-xl border border-[#00F3FF]/20 mt-4">
                     <p className="text-[#00B4CC] font-bold text-sm text-center">
@@ -237,6 +238,8 @@ function App() {
                   </div>
                 </div>
               </div>
+              {/* 👇 AQUÍ INSERTAMOS EL MURO DE LA COMUNIDAD 👇 */}
+              <FeedComunidad />
             </div>
           )}
 

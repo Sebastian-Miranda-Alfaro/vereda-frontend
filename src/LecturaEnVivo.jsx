@@ -91,6 +91,8 @@ export default function LecturaEnVivo() {
   // --- FUNCIONES PARA LA API ---
   const [textoNota, setTextoNota] = useState(''); // Lo que el usuario escribe en la nota
   const [subrayadosCapitulo, setSubrayadosCapitulo] = useState([]); // Guarda los versículos pintados
+  // versiculo compartido
+  const [textoReflexion, setTextoReflexion] = useState('');
 
   const manejarSubrayado = async (numeroVersiculo) => {
     try {
@@ -230,7 +232,29 @@ useEffect(() => {
     setLibroSeleccionado(nuevoLibro);
     setCapituloSeleccionado(1); 
   };
+  const manejarPublicarCompartido = async () => {
+    try {
+      // Obtenemos el texto bíblico exacto del versículo activo
+      const textoBiblicoACompartir = versiculos.find(v => v.verse === versiculoActivo)?.text;
 
+      await compartirVersiculo(
+        libroSeleccionado.nombre,
+        capituloSeleccionado,
+        versiculoActivo,
+        textoBiblicoACompartir,
+        textoReflexion // Su nota opcional
+      );
+
+      alert("¡Versículo enviado al Feed de la comunidad! ✨");
+      setModalCompartirAbierto(false); // Cierra modal
+      setTextoReflexion(''); // Limpia textarea
+      setVersiculoActivo(null); // Cierra menú
+      
+    } catch (error) {
+      console.error("Error al publicar:", error);
+      alert("Hubo un error al publicar en el feed. Revisa tu conexión.");
+    }
+  };
   // --- COMPONENTES VISUALES ---
   const SelectorMinimalista = ({ value, onChange, options, label }) => (
     <div className="relative">
@@ -436,7 +460,10 @@ useEffect(() => {
               <textarea 
                 className="w-full bg-gray-50 dark:bg-gray-700 p-4 rounded-xl border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-[#23D9A6] outline-none min-h-[100px] resize-none mb-4 dark:text-white"
                 placeholder="Escribe una reflexión pública (opcional)..."
+                value={textoReflexion}
+                onChange={(e) => setTextoReflexion(e.target.value)}
               ></textarea>
+
               <div className="flex gap-3">
                 <button 
                   onClick={() => setModalCompartirAbierto(false)}
@@ -444,12 +471,9 @@ useEffect(() => {
                 >
                   Cancelar
                 </button>
+
                 <button 
-                  onClick={() => {
-                    alert("¡Versículo enviado al Feed de la comunidad! ✨");
-                    setModalCompartirAbierto(false);
-                    setVersiculoActivo(null);
-                  }}
+                  onClick={manejarPublicarCompartido}
                   className="flex-1 py-3 font-bold text-white bg-[#23D9A6] hover:bg-[#1eb98e] rounded-xl shadow-lg transition-transform active:scale-95"
                 >
                   Publicar

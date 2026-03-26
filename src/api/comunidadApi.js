@@ -46,11 +46,34 @@ export const obtenerMisSubrayados = async () => {
 };
 
 // 3. VERSÍCULOS COMPARTIDOS (Feed)
+
+// Para PUBLICAR en el muro (requiere estar logueado, por eso usa getAuthHeaders)
 export const compartirVersiculo = async (libro, capitulo, versiculo, texto_biblico, nota_publica) => {
     const response = await fetch(`${API_URL}/compartidos/`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ libro, capitulo, versiculo, texto_biblico, nota_publica })
     });
+    
+    if (!response.ok) {
+        throw new Error('Error al compartir el versículo');
+    }
+    
+    return response.json();
+};
+
+// Para LEER el muro en la página de Inicio (no requiere estar logueado, para que los visitantes lo vean)
+export const obtenerFeedComunidad = async () => {
+    const response = await fetch(`${API_URL}/compartidos/`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    
+    if (!response.ok) {
+        throw new Error('Error al obtener el feed');
+    }
+    
     return response.json();
 };
