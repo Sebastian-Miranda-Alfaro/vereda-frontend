@@ -156,13 +156,13 @@ function App() {
               </svg>
             </button>
             <h1 className="text-xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#FF5359] to-[#FF3EF8]">
-              VEREDA
+              Faithful Circle
             </h1>
           </div>
           
           {/* Avatar del usuario (inicial del nombre) */}
           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#5241C7] to-[#FF3EF8] text-white flex items-center justify-center font-bold text-lg shadow-md">
-            {username ? username.charAt(0).toUpperCase() : 'V'}
+            {username ? username.charAt(0).toUpperCase() : 'F'}
           </div>
         </nav>
 
@@ -210,7 +210,7 @@ function App() {
               <div className="bg-[#FFFFFF] p-6 rounded-[2rem] shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#FF5359] to-[#FF3EF8]"></div>
                 
-                <h2 className="text-3xl font-black text-[#212121] mb-4 tracking-tight">Bienvenidos a Vereda</h2>
+                <h2 className="text-3xl font-black text-[#212121] mb-4 tracking-tight">Bienvenidos a Faithful Circle</h2>
                 
                 {/* Imagen del lugar*/}
                 <div className="w-full h-48 bg-gray-200 rounded-2xl mb-6 overflow-hidden relative shadow-md">
@@ -274,7 +274,7 @@ function App() {
 
         <div className="text-center mb-8 mt-4">
           <h1 className="text-5xl font-black mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#FF5359] to-[#5241C7]">
-            Vereda
+            Faithful Circle
           </h1>
           <p className="text-[#757C8A] font-medium">
             {isRegistering ? 'Crea tu perfil para unirte.' : 'Tu espacio, tu comunidad.'}
