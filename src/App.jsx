@@ -5,6 +5,8 @@ import CuadroDevocional from './CuadroDevocional'
 import fotoLugar from './assets/foto-comunidad.jpg'
 import Eventos from './Eventos'
 import FeedComunidad from './FeedComunidad';
+import { eliminarCompartido } from './api/comunidadApi';
+
 
 function App() {
   const [username, setUsername] = useState('')
@@ -119,6 +121,21 @@ function App() {
       alert("Error de conexión con el servidor.")
     }
   }
+  const manejarEliminarPublicacion = async (id) => {
+    if (!window.confirm("¿Estás seguro de que quieres borrar esta publicación de la comunidad?")) return;
+
+    try {
+      await eliminarCompartido(id);
+      
+      // Aquí actualizamos la lista del muro al instante. 
+      // OJO: Si tu variable de estado se llama diferente a 'setFeed' (ej. 'setPublicaciones'), cámbialo aquí:
+      setFeed((prevFeed) => prevFeed.filter((post) => post.id !== id));
+      
+    } catch (error) {
+      console.error("Error al eliminar la publicación:", error);
+      alert("Hubo un error al eliminar. Revisa tu conexión.");
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token_vereda')

@@ -1,9 +1,15 @@
+// src/api/FeedComunidad.jsx
 import React, { useState, useEffect } from 'react';
-import { obtenerFeedComunidad } from './api/comunidadApi';
+import { obtenerFeedComunidad, eliminarCompartido } from './api/comunidadApi';
 
 const FeedComunidad = () => {
   const [publicaciones, setPublicaciones] = useState([]);
   const [cargando, setCargando] = useState(true);
+  
+  // 👉 PASO 1: OBTENER TU NOMBRE DE USUARIO
+  // Usamos la misma llave 'usuario_vereda' que guardaste en el handleLogin
+  const miUsuarioLogueado = localStorage.getItem('usuario_vereda');
+
   // Detecta automáticamente si estamos en local o en la nube
   const BACKEND_URL = window.location.hostname === 'localhost' 
     ? 'http://127.0.0.1:8000' 
@@ -22,6 +28,22 @@ const FeedComunidad = () => {
     };
     cargarMuro();
   }, []);
+
+  // La función para borrar publicaciones
+  const manejarEliminarPublicacion = async (id) => {
+    if (!window.confirm("¿Estás seguro de que quieres borrar esta publicación de la comunidad?")) return;
+
+    try {
+      await eliminarCompartido(id);
+      
+      // Actualizamos la lista del muro al instante sin recargar la página
+      setPublicaciones((prev) => prev.filter((post) => post.id !== id));
+      
+    } catch (error) {
+      console.error("Error al eliminar la publicación:", error);
+      alert("Hubo un error al eliminar. Revisa tu conexión.");
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto py-16 px-6">
@@ -44,12 +66,25 @@ const FeedComunidad = () => {
       ) : (
         <div className="space-y-6">
           {publicaciones.map((post) => (
-            <div key={post.id} className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
+            <div key={post.id} className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow relative">
               
+              {/* 👉 PASO 2: RENDERIZADO CONDICIONAL DEL BOTÓN BASURERO 👉 */}
+              {/* Solo si el dueño del post (post.nombre_usuario) soy yo (miUsuarioLogueado), pintamos el basurero */}
+              {post.nombre_usuario === miUsuarioLogueado && (
+                <button 
+                  onClick={() => manejarEliminarPublicacion(post.id)}
+                  className="absolute top-4 right-4 text-gray-300 hover:text-red-500 p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                  title="Eliminar publicación"
+                >
+                  🗑️
+                </button>
+              )}
+              {/* ---------------------------------------------------- */}
+
               {/* CABECERA: Avatar y Nombre */}
-              <div className="flex items-center gap-4 mb-5">
+              {/* Agregamos padding-right pr-10 para que el nombre no choque con el basurero */}
+              <div className="flex items-center gap-4 mb-5 pr-10">
                 <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 shadow-sm overflow-hidden flex-shrink-0">
-                  {/* Si el usuario tiene avatar lo mostramos, si no, uno por defecto */}
                   <img 
                     src={post.avatar_usuario ? `${BACKEND_URL}${post.avatar_usuario}` : `https://ui-avatars.com/api/?name=${post.nombre_usuario}&background=23D9A6&color=fff`} 
                     alt="Avatar" 
@@ -71,7 +106,7 @@ const FeedComunidad = () => {
                 </p>
               </div>
 
-              {/* PIE: Reflexión (Solo se muestra si el usuario escribió algo) */}
+              {/* PIE: Reflexión */}
               {post.nota_publica && (
                 <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                   <p className="text-[#212121] dark:text-gray-200">

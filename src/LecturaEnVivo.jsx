@@ -412,7 +412,7 @@ useEffect(() => {
                       }`}
                       onClick={() => setVersiculoActivo(versiculoActivo === v.verse ? null : v.verse)}
                     >
-                      {/* 👇 AQUÍ ESTÁ EL CAMBIO: El contenedor para el número y el iconito de nota 👇 */}
+                      {/* El contenedor para el número y el iconito de nota 👇 */}
                       <div className="flex flex-col items-center pt-1.5 min-w-[24px]">
                         <span className="text-sm font-bold text-gray-400">{v.verse}</span>
                         {/* Si el versículo actual está en nuestra lista de notas, pintamos el ícono */}

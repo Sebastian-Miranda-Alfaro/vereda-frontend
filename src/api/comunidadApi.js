@@ -103,3 +103,17 @@ export const eliminarNota = async (libro, capitulo, versiculo) => {
   if (!response.ok) throw new Error("Error al eliminar nota");
   return true;
 };
+
+export const eliminarCompartido = async (id) => {
+  const token = localStorage.getItem('token_vereda'); 
+
+  const response = await fetch(`${API_URL}/compartidos/${id}/`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+  });
+  if (!response.ok) throw new Error("Error al eliminar la publicación");
+  return true;
+};
