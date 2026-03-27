@@ -20,13 +20,13 @@ export default defineConfig({
         display: 'standalone', // Esto oculta la barra de direcciones del navegador
         icons: [
           {
-            src: '/icon-192x192.png',
-            sizes: '192x192',
+            src: '/faithful-icon-512.png',
+            sizes: '512x512',
             type: 'image/png'
           },
           {
-            src: '/icon-512x512.png',
-            sizes: '512x512',
+            src: '/faithful-icon-180.png',
+            sizes: '180x180',
             type: 'image/png'
           }
         ]
