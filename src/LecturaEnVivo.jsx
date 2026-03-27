@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { guardarSubrayado, guardarNota,obtenerMisNotas, compartirVersiculo, obtenerMisSubrayados } from './api/comunidadApi';
+import { guardarSubrayado, guardarNota,obtenerMisNotas, compartirVersiculo, obtenerMisSubrayados,eliminarSubrayado, eliminarNota } from './api/comunidadApi';
 // --- CONFIGURACIÓN DE LA BIBLIA ---
 const librosBiblia = [
   { nombre: "Génesis", valor: "genesis", capitulos: 50 },
@@ -97,16 +97,26 @@ export default function LecturaEnVivo() {
   const [notaParaLeer, setNotaParaLeer] = useState(null);
 
   const manejarSubrayado = async (numeroVersiculo) => {
+    const yaEstabaSubrayado = subrayadosCapitulo.includes(numeroVersiculo);
     try {
-      await guardarSubrayado(libroSeleccionado.nombre, capituloSeleccionado, numeroVersiculo, 'amarillo');
-      alert("¡Versículo subrayado y guardado en la nube! 🖍️");
-      setSubrayadosCapitulo((prev) => [...prev, numeroVersiculo]);
-      setVersiculoActivo(null); // Cierra el menú
-    } catch (error) {
-      console.error("Error al subrayar:", error);
-      alert("Hubo un error al guardar. Revisa tu consola.");
+      if (yaEstabaSubrayado) {
+        // Si ya estaba, lo ELIMINAMOS de la base de datos y de la pantalla 
+        await eliminarSubrayado(libroSeleccionado.nombre, capituloSeleccionado, numeroVersiculo);
+        setSubrayadosCapitulo((prev) => prev.filter(v => v !== numeroVersiculo));
+      } else {
+        // Si no estaba, lo GUARDAMOS
+        await guardarSubrayado(libroSeleccionado.nombre, capituloSeleccionado, numeroVersiculo, 'amarillo');
+        setSubrayadosCapitulo((prev) => [...prev, numeroVersiculo]);
+      }
+      setVersiculoActivo(null); // Cerramos el menú
+    }  catch (error) {
+       console.error("Error al modificar el subrayado:", error);
+       alert("Hubo un error al guardar/eliminar. Revisa tu consola.");
+
+    
     }
-  };
+  };  
+
 
   const manejarGuardarNota = async () => {
     if (!textoNota.trim()) return;
@@ -121,6 +131,30 @@ export default function LecturaEnVivo() {
       console.error("Error al guardar nota:", error);
     }
   };
+  const manejarEliminarNota = async (numeroVersiculo) => {
+    // Le pedimos confirmación al usuario para no borrar por accidente
+    if (!window.confirm("¿Estás seguro de que quieres eliminar esta nota?")) return;
+
+    try {
+      await eliminarNota(libroSeleccionado.nombre, capituloSeleccionado, numeroVersiculo);
+      
+      // Eliminamos la nota de nuestro diccionario local para que desaparezca el ícono 📝
+      setNotasGuardadas((prev) => {
+        const nuevoDiccionario = { ...prev };
+        delete nuevoDiccionario[numeroVersiculo];
+        return nuevoDiccionario;
+      });
+
+      setNotaParaLeer(null); // Cerramos el modal
+      alert("Nota eliminada correctamente 🗑️");
+    } catch (error) {
+      console.error("Error al eliminar la nota:", error);
+      alert("Hubo un error al eliminar la nota.");
+    }
+  };
+
+
+
   // --- CARGAR INDICADORES DE NOTAS ---
   useEffect(() => {
     const cargarIndicadores = async () => {
@@ -401,7 +435,7 @@ useEffect(() => {
                       
                       {/* EL MENÚ FLOTANTE MÁGICO */}
                       {versiculoActivo === v.verse && (
-                        <div className="absolute top-full left-10 mt-2 z-20 flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 animate-fade-in-up">
+                        <div className="absolute top-full left-10 mt-2 z-10 flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 animate-fade-in-up">
 
                           {/* Botón Subrayar (Amarillo) */}
                           <button 
@@ -525,37 +559,47 @@ useEffect(() => {
             </div>
           </div>
         )}
-        {/* --- MODAL PARA LEER LA NOTA --- */}
-      {notaParaLeer && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setNotaParaLeer(null)}>
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-2xl w-full max-w-sm animate-fade-in-up" onClick={e => e.stopPropagation()}>
-            
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-[#212121] dark:text-white">
-                Mi Nota Privada
-              </h3>
-              <span className="bg-[#5241C7]/10 text-[#5241C7] text-xs font-bold px-3 py-1 rounded-full">
-                {libroSeleccionado?.nombre} {capituloSeleccionado}:{notaParaLeer.versiculo}
-              </span>
-            </div>
+{/* --- MODAL PARA LEER LA NOTA --- */}
+        {notaParaLeer && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setNotaParaLeer(null)}>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-2xl w-full max-w-sm animate-fade-in-up" onClick={e => e.stopPropagation()}>
+              
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-[#212121] dark:text-white">
+                  Mi Nota Privada
+                </h3>
+                <span className="bg-[#5241C7]/10 text-[#5241C7] text-xs font-bold px-3 py-1 rounded-full">
+                  {libroSeleccionado?.nombre} {capituloSeleccionado}:{notaParaLeer.versiculo}
+                </span>
+              </div>
 
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl border border-yellow-100 dark:border-yellow-700/50 mb-6">
-              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
-                {notaParaLeer.texto}
-              </p>
+              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl border border-yellow-100 dark:border-yellow-700/50 mb-6">
+                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                  {notaParaLeer.texto}
+                </p>
+              </div>
+              
+              {/* Botones de acción del Modal de Lectura */}
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => manejarEliminarNota(notaParaLeer.versiculo)}
+                  className="flex-1 py-3 font-bold text-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded-xl transition-colors"
+                >
+                  🗑️ Eliminar
+                </button>
+                <button 
+                  onClick={() => setNotaParaLeer(null)}
+                  className="flex-1 py-3 font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 rounded-xl transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
-            
-            <button 
-              onClick={() => setNotaParaLeer(null)}
-              className="w-full py-3 font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 rounded-xl transition-colors"
-            >
-              Cerrar
-            </button>
           </div>
-        </div>
-      )}
+        )}
 
       </div>
     </div>
   );
 }
+

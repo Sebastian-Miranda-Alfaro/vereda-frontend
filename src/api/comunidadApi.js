@@ -77,3 +77,29 @@ export const obtenerFeedComunidad = async () => {
     
     return response.json();
 };
+
+export const eliminarSubrayado = async (libro, capitulo, versiculo) => {
+  const token = localStorage.getItem('token_vereda');
+  const response = await fetch(`${API_URL}/subrayados/${libro}/${capitulo}/${versiculo}/`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}` // Aquí enviamos la llave para que Django nos deje borrar
+    },
+  });
+  if (!response.ok) throw new Error("Error al eliminar subrayado");
+  return true;
+};
+
+export const eliminarNota = async (libro, capitulo, versiculo) => {
+  const token = localStorage.getItem('token_vereda');
+  const response = await fetch(`${API_URL}/notas/${libro}/${capitulo}/${versiculo}/`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error("Error al eliminar nota");
+  return true;
+};
